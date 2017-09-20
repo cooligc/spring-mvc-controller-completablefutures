@@ -27,21 +27,21 @@ public class CompletableFuturesRestApplication {
   private Future<String> concatenateAsync(List<String> input) {
     // Create the collection of futures.
     List<Future<String>> futures =
-        input.stream()
-            .map(str -> supplyAsync(() -> callApi(str)))
-            .collect(toList());
+      input.stream()
+        .map(str -> supplyAsync(() -> callApi(str)))
+        .collect(toList());
 
     // Restructure as varargs because that's what CompletableFuture.allOf requires.
     CompletableFuture<?>[] futuresAsVarArgs = futures
-        .toArray(new CompletableFuture[futures.size()]);
+      .toArray(new CompletableFuture[futures.size()]);
 
-    // Create a new future to gather results once all of the previous futures complete.
-    CompletableFuture<Void> ignored = CompletableFuture.allOf(futuresAsVarArgs);
+    // Create a new future that completes once once all of the previous futures complete.
+    CompletableFuture<Void> jobsDone = CompletableFuture.allOf(futuresAsVarArgs);
 
     CompletableFuture<String> output = new CompletableFuture<>();
 
     // Once all of the futures have completed, build out the result string from results.
-    ignored.thenAccept(i -> {
+    jobsDone.thenAccept(ignored -> {
       StringBuilder stringBuilder = new StringBuilder();
       futures.forEach(f -> {
         try {
@@ -56,7 +56,7 @@ public class CompletableFuturesRestApplication {
     return output;
   }
 
-  String callApi(String str) {
+  private String callApi(String str) {
     try {
       // restTemplate.invoke(...)
       sleep(1000);
